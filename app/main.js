@@ -119,7 +119,7 @@ const TASKS = {
   friendly:    (t) => `Rewrite the following text in a warm, friendly, casual tone. Return only the rewritten text.\n\nTEXT:\n${t}`,
   translateId: (t) => `Translate the following text into natural, idiomatic Indonesian (Bahasa Indonesia). Return only the translation.\n\nTEXT:\n${t}`,
   translateEn: (t) => `Translate the following text into natural, idiomatic English. Return only the translation.\n\nTEXT:\n${t}`,
-  expand:      (t) => `Expand the following short note into one clear, well-structured paragraph. Do not invent facts that are not implied by the note.\n\nNOTE:\n${t}`,
+  expand:      (t) => `Expand the following short note into one full paragraph of 4 to 6 complete sentences. Do not invent facts that are not implied by the note.\n\nNOTE:\n${t}`,
   image:       ()  => `Describe this image in detail: what is in it, what is happening, and anything notable. Then add one sentence suggesting a good social-media caption for it.`,
 };
 
@@ -145,7 +145,7 @@ async function fileToGenerativePart(file) {
     reader.onloadend = () => resolve(reader.result.split(",")[1]);
     reader.readAsDataURL(file);
   });
-  return { type: "inlineData", inlineData: { data: base64, mimeType: file.type } };
+  return { inlineData: { data: base64, mimeType: file.type } };
 }
 
 // ── Run ──────────────────────────────────────────────────────────────────────
