@@ -20,9 +20,11 @@ Built for **#BuildHybridAI 2026**. Platform: **Web (Chrome)**.
 
 NanoDesk doesn't make the user choose. It exposes all four Firebase AI Logic
 inference modes — `PREFER_ON_DEVICE`, `ONLY_ON_DEVICE`, `PREFER_IN_CLOUD`,
-`ONLY_IN_CLOUD` — and, after every request, shows a **route badge** read from
-the SDK's `response.inferenceSource`, so you can see where each request
-actually ran, plus its latency.
+`ONLY_IN_CLOUD` — and, after every request, shows a **route badge** so you can
+see where each request actually ran, plus its latency. The badge is read from
+the SDK's `response.inferenceSource` when it reports one; when it doesn't, the
+badge honestly states the route that follows from the selected mode and the
+on-device model's availability.
 
 ## How it uses Firebase AI Logic
 
