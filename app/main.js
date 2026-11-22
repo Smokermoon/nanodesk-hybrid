@@ -47,10 +47,18 @@ if (appCheckSiteKey) {
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
 // ── Models (one instance per inference mode, created lazily) ────────────────
+// The cloud model is pinned explicitly: SDK 12.5.0's built-in default
+// (gemini-2.0-flash-lite) has been retired upstream and returns 404.
+// Verified live 2026-11-22; gemini-3.5-flash-lite is the successor named
+// in the API's own error message.
+const CLOUD_MODEL = "gemini-3.5-flash-lite";
 const modelCache = new Map();
 function getModel(modeName) {
   if (!modelCache.has(modeName)) {
-    const model = getGenerativeModel(ai, { mode: InferenceMode[modeName] });
+    const model = getGenerativeModel(ai, {
+      mode: InferenceMode[modeName],
+      inCloudParams: { model: CLOUD_MODEL },
+    });
     modelCache.set(modeName, { model, deviceReady: false });
   }
   return modelCache.get(modeName);
