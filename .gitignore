@@ -1,0 +1,12 @@
+.private/
+node_modules/
+.env
+.env.*
+*.local
+.DS_Store
+
+# NEVER commit secrets: service-account keys or App Check debug tokens.
+# (A Firebase *web config* is a public identifier and is fine to commit —
+#  see app/firebase-config.js.)
+*service-account*.json
+*debug-token*
