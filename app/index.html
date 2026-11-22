@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NanoDesk — Hybrid AI Text Studio</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222c; --line: #2a2f3a;
+    --text: #e8eaf0; --muted: #9aa3b5; --accent: #ffb340; --accent2: #4da3ff;
+    --ok: #3ecf7a; --bad: #ff6b6b; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 18px 60px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 6px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: .3px; }
+  h1 .nano { color: var(--accent); }
+  .tagline { color: var(--muted); margin: 4px 0 18px; font-size: 15px; line-height: 1.5; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border: 1px solid var(--line);
+         border-radius: 999px; font-size: 13px; background: var(--panel); color: var(--muted); }
+  .pill .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .pill.ready .dot { background: var(--ok); }
+  .pill.busy .dot { background: var(--accent); }
+  .pill.none .dot { background: var(--bad); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  label.lbl { display: block; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel2);
+          color: var(--text); cursor: pointer; font-size: 14px; }
+  .chip:hover { border-color: var(--accent); }
+  .chip.active { background: var(--accent); color: #161616; border-color: var(--accent); font-weight: 600; }
+  textarea { width: 100%; min-height: 130px; resize: vertical; background: var(--panel2); color: var(--text);
+             border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 15px; line-height: 1.55; font-family: inherit; }
+  textarea:focus { outline: 2px solid var(--accent2); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  select, input[type="file"] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-size: 14px; }
+  button.run { background: var(--accent); color: #161616; border: none; font-size: 16px; font-weight: 700;
+               padding: 12px 26px; border-radius: 10px; cursor: pointer; }
+  button.run:disabled { opacity: .45; cursor: wait; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 10px 16px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+  .progress { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; display: none; margin-top: 10px; }
+  .progress > div { height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+  #output { white-space: pre-wrap; line-height: 1.65; font-size: 15.5px; min-height: 60px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .badge { font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; letter-spacing: .3px; }
+  .badge.device { background: rgba(62,207,122,.15); color: var(--ok); border: 1px solid var(--ok); }
+  .badge.cloud { background: rgba(77,163,255,.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .badge.neutral { background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .err { color: var(--bad); font-size: 14px; margin-top: 8px; white-space: pre-wrap; }
+  footer { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 8px; }
+  footer code { background: var(--panel2); padding: 1px 6px; border-radius: 6px; }
+  .hidden { display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js",
+    "firebase/ai": "https://www.gstatic.com/firebasejs/12.5.0/firebase-ai.js",
+    "firebase/app-check": "https://www.gstatic.com/firebasejs/12.5.0/firebase-app-check.js"
+  }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="nano">Nano</span>Desk</h1>
+    <span class="pill" id="deviceStatus"><span class="dot"></span><span id="deviceStatusText">Checking on-device model…</span></span>
+  </header>
+  <p class="tagline">
+    A hybrid AI text studio powered by <strong>Firebase AI Logic</strong>. Quick everyday writing tasks run
+    <strong>on-device</strong> with Gemini Nano in Chrome — private, instant, free, and they even work offline.
+    When the on-device model is not available, the same request <strong>seamlessly falls back to a cloud Gemini model</strong>.
+    Every answer shows you exactly where it ran.
+  </p>
+
+  <div class="card">
+    <label class="lbl" for="taskChips">1 · Pick a task</label>
+    <div class="chips" id="taskChips">
+      <button class="chip active" data-task="summarize">Summarize</button>
+      <button class="chip" data-task="polish">Fix &amp; polish</button>
+      <button class="chip" data-task="formal">Make it formal</button>
+      <button class="chip" data-task="friendly">Make it friendly</button>
+      <button class="chip" data-task="translateId">Translate → Indonesian</button>
+      <button class="chip" data-task="translateEn">Translate → English</button>
+      <button class="chip" data-task="expand">Expand into a paragraph</button>
+      <button class="chip" data-task="image">Describe an image</button>
+    </div>
+
+    <div id="textBlock" style="margin-top:16px;">
+      <label class="lbl" for="inputText">2 · Your text</label>
+      <textarea id="inputText" placeholder="Paste or type your text here…">Hybrid inference means this app does not have to choose between a small model that lives on your device and a big model that lives in the cloud. Short, everyday requests are answered locally by Gemini Nano, which keeps your words on your machine and responds almost instantly. If the local model is missing, busy, or the device does not support it, Firebase AI Logic quietly routes the very same request to a Gemini model in the cloud, so the feature never breaks — it just runs somewhere else.</textarea>
+    </div>
+
+    <div id="imageBlock" class="hidden" style="margin-top:16px;">
+      <label class="lbl" for="imageFile">2 · Your image (JPEG or PNG)</label>
+      <input type="file" id="imageFile" accept="image/jpeg,image/png" />
+      <p style="color:var(--muted); font-size:13px; margin:8px 0 0;">On-device multimodal input needs Chrome Desktop 139+ with
+      <code>chrome://flags/#prompt-api-for-gemini-nano-multimodal-input</code> enabled.</p>
+    </div>
+
+    <div style="margin-top:16px;">
+      <label class="lbl" for="modeSelect">3 · Inference mode (Firebase AI Logic)</label>
+      <div class="row">
+        <select id="modeSelect">
+          <option value="PREFER_ON_DEVICE" selected>Hybrid — prefer on-device, fall back to cloud</option>
+          <option value="ONLY_ON_DEVICE">On-device only (Gemini Nano)</option>
+          <option value="ONLY_IN_CLOUD">Cloud only (Gemini)</option>
+          <option value="PREFER_IN_CLOUD">Hybrid — prefer cloud, fall back to on-device</option>
+        </select>
+        <button class="run" id="runBtn">Run task</button>
+        <button class="ghost" id="prepBtn" title="Download / warm up the on-device model">Prepare on-device model</button>
+      </div>
+      <div class="progress" id="dlProgress"><div></div></div>
+      <div class="err" id="errorBox"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="lbl">Result</label>
+    <div class="meta">
+      <span class="badge neutral" id="routeBadge">Not run yet</span>
+      <span class="badge neutral" id="timeBadge">— ms</span>
+      <span class="badge neutral" id="modeBadge">Mode: PREFER_ON_DEVICE</span>
+    </div>
+    <div id="output">Your result will appear here.</div>
+  </div>
+
+  <footer>
+    Built for <strong>#BuildHybridAI 2026</strong> with Firebase AI Logic (Chrome Prompt API / Gemini Nano on-device +
+    Gemini Developer API in the cloud). On-device inference requires Chrome Desktop 139+ on a desktop OS.
+    Route badges come from the SDK's <code>response.inferenceSource</code>, so what you see is where the request really ran.
+  </footer>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
