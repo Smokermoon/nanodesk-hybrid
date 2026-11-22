@@ -158,6 +158,19 @@ const routeBadge = document.getElementById("routeBadge");
 const timeBadge = document.getElementById("timeBadge");
 const modeBadge = document.getElementById("modeBadge");
 const dlProgress = document.getElementById("dlProgress");
+const copyBtn = document.getElementById("copyBtn");
+copyBtn.addEventListener("click", async () => {
+  const text = outputEl.textContent.trim();
+  if (!text || text === "Your result will appear here.") return;
+  try {
+    await navigator.clipboard.writeText(text);
+    copyBtn.textContent = "Copied ✓";
+    setTimeout(() => (copyBtn.textContent = "Copy result"), 1500);
+  } catch {
+    copyBtn.textContent = "Copy failed";
+    setTimeout(() => (copyBtn.textContent = "Copy result"), 1500);
+  }
+});
 const dlBar = dlProgress.querySelector("div");
 
 modeSelect.addEventListener("change", () => {

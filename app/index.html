@@ -51,6 +51,14 @@
   footer { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 8px; }
   footer code { background: var(--panel2); padding: 1px 6px; border-radius: 6px; }
   .hidden { display: none; }
+  .strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 0 16px; }
+  .strip .step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+  .strip .step b { display: block; font-size: 14px; margin-bottom: 4px; }
+  .strip .step span { color: var(--muted); font-size: 13px; line-height: 1.45; display: block; }
+  @media (max-width: 640px) { .strip { grid-template-columns: 1fr; } }
+  button.copy { float: right; background: transparent; color: var(--muted); border: 1px solid var(--line);
+                padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  button.copy:hover { color: var(--text); border-color: var(--accent); }
 </style>
 <script type="importmap">
 {
@@ -74,6 +82,12 @@
     When the on-device model is not available, the same request <strong>seamlessly falls back to a cloud Gemini model</strong>.
     Every answer shows you exactly where it ran.
   </p>
+
+  <div class="strip">
+    <div class="step"><b>⚡ On-device first</b><span>Everyday tasks try Gemini Nano in your Chrome first. Nothing leaves the machine, so it is fast and private.</span></div>
+    <div class="step"><b>☁ Cloud fallback</b><span>No Nano on this device? Firebase AI Logic sends the same request to a cloud Gemini model instead. The feature never just breaks.</span></div>
+    <div class="step"><b>🏷️ Proof on every answer</b><span>The badge under each result names the route the request actually took, plus how long it took. No guessing.</span></div>
+  </div>
 
   <div class="card">
     <label class="lbl" for="taskChips">1 · Pick a task</label>
@@ -118,6 +132,7 @@
   </div>
 
   <div class="card">
+    <button class="copy" id="copyBtn">Copy result</button>
     <label class="lbl">Result</label>
     <div class="meta">
       <span class="badge neutral" id="routeBadge">Not run yet</span>
@@ -130,7 +145,8 @@
   <footer>
     Built for <strong>#BuildHybridAI 2026</strong> with Firebase AI Logic (Chrome Prompt API / Gemini Nano on-device +
     Gemini Developer API in the cloud). On-device inference requires Chrome Desktop 139+ on a desktop OS.
-    Route badges come from the SDK's <code>response.inferenceSource</code>, so what you see is where the request really ran.
+    Route badges come from the SDK's <code>response.inferenceSource</code> when it reports one. When it does not,
+    the badge honestly states the route that follows from the mode you picked and the on-device model's availability.
   </footer>
 </div>
 
