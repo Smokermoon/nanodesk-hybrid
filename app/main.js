@@ -87,10 +87,12 @@ async function ensureDeviceModel(modeName, onProgress) {
 // ── On-device availability (Chrome Prompt API) ──────────────────────────────
 const statusPill = document.getElementById("deviceStatus");
 const statusText = document.getElementById("deviceStatusText");
+let lastNanoAvailability = "unknown";
 async function refreshDeviceStatus() {
   try {
     if (typeof LanguageModel === "undefined") throw new Error("no Prompt API");
     const avail = await LanguageModel.availability();
+    lastNanoAvailability = avail;
     if (avail === "available") {
       statusPill.className = "pill ready";
       statusText.textContent = "Gemini Nano on this device: ready";
@@ -102,6 +104,7 @@ async function refreshDeviceStatus() {
       statusText.textContent = "Gemini Nano: not available here — cloud fallback active";
     }
   } catch {
+    lastNanoAvailability = "no-api";
     statusPill.className = "pill none";
     statusText.textContent = "On-device model: needs Chrome Desktop 139+ — cloud fallback active";
   }
@@ -212,7 +215,9 @@ runBtn.addEventListener("click", async () => {
 
     const result = await model.generateContentStream(parts);
     let acc = "";
+    let lastChunk = null;
     for await (const chunk of result.stream) {
+      lastChunk = chunk;
       acc += chunk.text();
       outputEl.textContent = acc;
     }
@@ -221,13 +226,29 @@ runBtn.addEventListener("click", async () => {
     timeBadge.textContent = `${ms.toLocaleString()} ms`;
 
     // inferenceSource (SDK v12.5.0+) tells us where the request really ran.
-    const src = response.inferenceSource;
+    // It is not always populated (observed 2026-11-22: undefined on the
+    // aggregated streaming response when no on-device model exists in the
+    // browser), so fall back to labels that follow strictly from the mode
+    // semantics + the live Nano availability — never guess a route.
+    const src = response.inferenceSource ?? lastChunk?.inferenceSource;
     if (src === "ON_DEVICE") {
       routeBadge.className = "badge device";
       routeBadge.textContent = "⚡ Ran ON-DEVICE · Gemini Nano";
     } else if (src === "IN_CLOUD") {
       routeBadge.className = "badge cloud";
       routeBadge.textContent = "☁ Ran IN CLOUD · Gemini";
+    } else if (modeName === "ONLY_IN_CLOUD") {
+      routeBadge.className = "badge cloud";
+      routeBadge.textContent = "☁ Ran IN CLOUD · Gemini (cloud-only mode)";
+    } else if (modeName === "ONLY_ON_DEVICE") {
+      routeBadge.className = "badge device";
+      routeBadge.textContent = "⚡ Ran ON-DEVICE · Gemini Nano (device-only mode)";
+    } else if (
+      modeName === "PREFER_ON_DEVICE" &&
+      (lastNanoAvailability === "unavailable" || lastNanoAvailability === "no-api")
+    ) {
+      routeBadge.className = "badge cloud";
+      routeBadge.textContent = "☁ Ran IN CLOUD · Gemini (Nano unavailable — cloud fallback)";
     } else {
       routeBadge.className = "badge neutral";
       routeBadge.textContent = "Route: not reported by SDK";
